@@ -9,7 +9,7 @@ import random
 from functools import partial
 from typing import Any, Dict, Optional, List, Union, Tuple, Callable
 from dataclasses import dataclass, field
-
+import wandb
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -1740,4 +1740,11 @@ class EvaluateCallback(TrainerCallback):
                         private=self.hub_private_repo,
                         exist_ok=True,
                         commit_message='new best checkpoint')
-        logger.info(f'corrcoef: {corrcoef}, best corrcoef: {self.best_corrcoef}')
+        if wandb and wandb.run:
+            metrics_to_log = {
+                'eval/spearman_correlation': corrcoef,
+                'eval/best_spearman_correlation': self.best_corrcoef
+            }
+            global_step = state.global_step if state is not None else None
+            wandb.log(metrics_to_log, step=global_step)
+        print(f'INFO: corrcoef: {corrcoef}, best corrcoef: {self.best_corrcoef}')
